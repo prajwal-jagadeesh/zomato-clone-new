@@ -17,7 +17,7 @@ pipeline {
 
         stage('checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/prajwal-jagadeesh/Zomato-Clone.git'
+                git branch: 'main', url: 'https://github.com/prajwal-jagadeesh/zomato_clone-new.git'
             }
         }
         
