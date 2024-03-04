@@ -17,7 +17,7 @@ pipeline {
 
         stage('checkout from Git') {
             steps {
-                git branch: 'main', url: 'https://github.com/prajwal-jagadeesh/zomato_clone-new.git'
+                git branch: 'main', url: 'https://github.com/prajwal-jagadeesh/zomato-clone-new.git'
             }
         }
         
@@ -36,6 +36,26 @@ pipeline {
                 }
             }
         }
+
+        stage('Owasp FS scan') {
+            steps {
+                script {
+                    try {
+                        dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                        dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+                    } catch (Exception e) {
+                        echo "OWASP Dependency Check failed but pipeline will continue."
+                        echo "Exception: ${e.message}"
+                    }
+                }
+            }
+        }
+        
+        stage('Trivy FS Scan') {
+            steps {
+                sh "trivy fs . > trivyfs.txt"
+            }
+        }
         
         stage('Docker Build and Push') {
             steps {
@@ -44,10 +64,18 @@ pipeline {
                         sh "docker build -t zomato ."
                         sh "docker tag zomato prajwaldevops01/zomato:latest"
                         sh "docker push prajwaldevops01/zomato:latest"
+                        sh "docker rmi prajwaldevops01/zomato:latest"
+                        sh "docker rmi zomato"
                     }
                 }
             }
 
+        }
+        
+        stage('Trivy Image Scan') {
+            steps {
+                sh "trivy image prajwaldevops01/zomato:latest > trivy.txt"
+            }
         }
         
         stage('Deploy to container') {
